@@ -1,0 +1,19 @@
+# Files to DELETE (these are Next.js files, not compatible with Vite+React project)
+
+delete these directories and files:
+- app/ (entire directory)
+- i18n/ (entire directory) 
+- components/ (entire directory, or just components/LanguageSwitcher.tsx)
+- middleware.ts
+- i18n.ts
+- next.config.js
+- NEXTJS_STRUCTURE.md
+- README_I18N.md
+
+Keep everything in:
+- client/  (Vite React app)
+- server/ (Express server)
+- package.json (root config - already fixed)
+- messages/ (can keep if you want translations)
+
+These files contain Next.js-specific code that conflicts with the project's Vite+React setup.

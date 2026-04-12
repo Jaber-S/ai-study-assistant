@@ -1,0 +1,120 @@
+/* Custom styles for markdown content */
+.markdown-content {
+  color: #d1d5db; /* gray-300 */
+}
+
+.markdown-content h1 {
+  font-size: 2.25rem; /* text-4xl */
+  font-weight: bold;
+  color: #60a5fa; /* blue-400 */
+  margin-bottom: 1.5rem;
+  margin-top: 2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.5); /* blue-500/50 */
+}
+
+.markdown-content h2 {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: bold;
+  color: #93c5fd; /* blue-300 */
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3); /* blue-500/30 */
+}
+
+.markdown-content h3 {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 600;
+  color: #93c5fd; /* blue-300 */
+  margin-bottom: 0.75rem;
+  margin-top: 1rem;
+}
+
+.markdown-content p {
+  color: #d1d5db; /* gray-300 */
+  line-height: 1.625;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content strong {
+  font-weight: bold;
+  color: #ffffff;
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.3), rgba(96, 165, 250, 0.1));
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.markdown-content em {
+  font-style: italic;
+  color: #bfdbfe; /* blue-200 */
+  font-weight: 500;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  color: #d1d5db; /* gray-300 */
+  margin-bottom: 1rem;
+  margin-left: 1rem;
+}
+
+.markdown-content li {
+  color: #d1d5db; /* gray-300 */
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #3b82f6; /* blue-500 */
+  padding-left: 1rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #dbeafe; /* blue-100 */
+  background: rgba(59, 130, 246, 0.15); /* blue-500/15 */
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.markdown-content hr {
+  margin: 1.5rem 0;
+  border-top: 2px solid rgba(59, 130, 246, 0.4); /* blue-500/40 */
+}
+
+.markdown-content code {
+  background: #111827; /* gray-900 */
+  color: #fb923c; /* orange-400 */
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  border: 1px solid #374151; /* gray-700 */
+}
+
+.markdown-content pre {
+  background: #111827; /* gray-900 */
+  color: #fb923c; /* orange-400 */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  border: 1px solid #374151; /* gray-700 */
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+.markdown-content a {
+  color: #60a5fa; /* blue-400 */
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.markdown-content a:hover {
+  color: #93c5fd; /* blue-300 */
+}

@@ -1,0 +1,40 @@
+{
+  "nav": {
+    "title": "Asistente de Estudio IA"
+  },
+  "modes": {
+    "chat": "Chat",
+    "summary": "Resumen",
+    "quiz": "Cuestionario",
+    "flashcards": "Tarjetas"
+  },
+  "sidebar": {
+    "title": "Fuentes",
+    "upload": "Subir fuentes",
+    "notes": "Notas adicionales",
+    "notesPlaceholder": "Pega o escribe más material aquí..."
+  },
+  "input": {
+    "chatPlaceholder": "Haz una pregunta sobre tu material...",
+    "notesPlaceholder": "Pega o escribe más material aquí, o confía solo en las subidas..."
+  },
+  "buttons": {
+    "chooseFiles": "Elegir archivos",
+    "runAssistant": "Ejecutar asistente",
+    "restart": "Reiniciar",
+    "finish": "Finalizar cuestionario",
+    "next": "Siguiente pregunta",
+    "tryAgain": "Intentar de nuevo"
+  },
+  "messages": {
+    "working": "Trabajando en tus fuentes…",
+    "somethingWrong": "Algo salió mal",
+    "noContent": "No se devolvió contenido.",
+    "quizComplete": "Cuestionario completado",
+    "correct": "Correcto",
+    "incorrect": "Incorrecto",
+    "rightAnswer": "La respuesta correcta es",
+    "addQuestion": "Agrega una pregunta para el modo chat.",
+    "addMaterial": "Agrega notas escritas y/o sube al menos un archivo .txt o .pdf."
+  }
+}

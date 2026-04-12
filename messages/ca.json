@@ -1,0 +1,40 @@
+{
+  "nav": {
+    "title": "Assistent d'Estudi IA"
+  },
+  "modes": {
+    "chat": "Xat",
+    "summary": "Resum",
+    "quiz": "Qüestionari",
+    "flashcards": "Targetes"
+  },
+  "sidebar": {
+    "title": "Fonts",
+    "upload": "Pujar fonts",
+    "notes": "Notes addicionals",
+    "notesPlaceholder": "Enganxa o escriu més material aquí..."
+  },
+  "input": {
+    "chatPlaceholder": "Fes una pregunta sobre el teu material...",
+    "notesPlaceholder": "Enganxa o escriu més material aquí, o confia només en les pujades..."
+  },
+  "buttons": {
+    "chooseFiles": "Triar fitxers",
+    "runAssistant": "Executar assistent",
+    "restart": "Reiniciar",
+    "finish": "Finalitzar qüestionari",
+    "next": "Següent pregunta",
+    "tryAgain": "Tornar a intentar"
+  },
+  "messages": {
+    "working": "Treballant en les teves fonts…",
+    "somethingWrong": "Alguna cosa ha sortit malament",
+    "noContent": "No s'ha retornat contingut.",
+    "quizComplete": "Qüestionari completat",
+    "correct": "Correcte",
+    "incorrect": "Incorrecte",
+    "rightAnswer": "La resposta correcta és",
+    "addQuestion": "Afegeix una pregunta per al mode xat.",
+    "addMaterial": "Afegeix notes escrites i/o puja almenys un fitxer .txt o .pdf."
+  }
+}
