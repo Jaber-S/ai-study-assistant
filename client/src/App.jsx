@@ -14,22 +14,28 @@ function ProtectedRoute({ session, children }) {
 export default function App() {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadSession() {
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+      } catch (error) {
+        console.warn('Error loading Supabase session:', error);
+        if (!mounted) return;
+        setSession(null);
+        setUser(null);
+      }
     }
 
     loadSession();
 
     const { subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
     });
@@ -39,14 +45,6 @@ export default function App() {
       subscription?.unsubscribe();
     };
   }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
-        Cargando VibeStudy...
-      </div>
-    );
-  }
 
   return (
     <BrowserRouter>

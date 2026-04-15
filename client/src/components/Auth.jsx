@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { Mail, Lock, LogIn, Users } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient.js';
 
+const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
+
 export async function signInWithGoogle() {
+  if (!isSupabaseConfigured) throw new Error('Supabase no está configurado. Agrega las variables de entorno.');
   const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
   if (error) throw error;
 }
 
 export async function signInWithFacebook() {
+  if (!isSupabaseConfigured) throw new Error('Supabase no está configurado. Agrega las variables de entorno.');
   const { error } = await supabase.auth.signInWithOAuth({ provider: 'facebook' });
   if (error) throw error;
 }
@@ -19,6 +23,20 @@ export default function Auth({ onAuthSuccess, initialMode = 'signin' }) {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="text-center text-slate-300">
+        <p className="text-lg font-semibold text-red-400 mb-4">Configuración requerida</p>
+        <p className="mb-4">Para usar la autenticación, configura Supabase agregando las variables de entorno:</p>
+        <div className="bg-slate-800 p-4 rounded-lg text-left font-mono text-sm">
+          <p>VITE_SUPABASE_URL=https://tu-proyecto.supabase.co</p>
+          <p>VITE_SUPABASE_ANON_KEY=tu-clave-anonima</p>
+        </div>
+        <p className="mt-4 text-sm">Crea un archivo <code className="bg-slate-700 px-2 py-1 rounded">client/.env</code> con estas variables.</p>
+      </div>
+    );
+  }
 
   const toggleMode = () => {
     setMode((current) => (current === 'signin' ? 'signup' : 'signin'));
@@ -33,6 +51,11 @@ export default function Auth({ onAuthSuccess, initialMode = 'signin' }) {
 
     if (!email || !password) {
       setError('Por favor ingresa correo y contraseña.');
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      setError('Supabase no está configurado. Agrega las variables de entorno.');
       return;
     }
 
