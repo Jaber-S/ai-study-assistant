@@ -8,6 +8,7 @@ import { SummaryView } from '../components/SummaryView.jsx';
 import { QuizView } from '../components/QuizView.jsx';
 import { FlashcardsView } from '../components/FlashcardsView.jsx';
 import { ChatView } from '../components/ChatView.jsx';
+import UserMenu from '../components/UserMenu.jsx';
 import { buildStudyMaterialText } from '../utils/buildStudyMaterial.js';
 import { extractTextFromFile } from '../utils/extractFileText.js';
 import { useTranslation } from 'react-i18next';
@@ -178,11 +179,6 @@ export default function Dashboard({ user }) {
 
   const retry = useCallback(() => { if (canSubmit) run(); }, [canSubmit, run]);
 
-  const handleSignOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    navigate('/', { replace: true });
-  }, [navigate]);
-
   const busy = loading || parsingFiles;
 
   return (
@@ -198,31 +194,35 @@ export default function Dashboard({ user }) {
         sourceError={sourceError}
         onReset={resetAllData}
         userName={displayName}
-        onSignOut={handleSignOut}
       />
       <main className="flex-1 bg-[#121212] p-6 pt-8 h-screen flex flex-col overflow-hidden">
-        <div className="max-w-5xl w-full mx-auto flex flex-col flex-1 min-h-0 overflow-hidden">
-          <ModeSelector value={mode} onChange={setMode} disabled={busy} />
-          <div className="mt-6 flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="flex-1 min-h-0">
-              {mode === 'summary' && <SummaryView data={summaryData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
-              {mode === 'quiz' && <QuizView data={quizData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
-              {mode === 'flashcards' && <FlashcardsView data={flashcardsData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
-              {mode === 'chat' && <ChatView messages={chatMessages} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
-            </div>
-            <div className="mt-auto flex justify-center pb-8">
-              {mode === 'chat' ? (
-                <FloatingInput mode={mode} question={question} setQuestion={setQuestion} onSubmit={run} disabled={busy || !combinedText.trim()} hasMaterial={hasMaterial} />
-              ) : (
-                <button
-                  type="button"
-                  onClick={run}
-                  disabled={!canSubmit || busy}
-                  className="rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600/50 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-blue-600/40 hover:shadow-blue-600/60 transition disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {hasMaterial ? (loading ? t('processing') : t('runAssistant')) : t('uploadOrWrite')}
-                </button>
-              )}
+        <div className="max-w-5xl w-full mx-auto">
+          <div className="flex justify-end mb-6">
+            <UserMenu user={user} />
+          </div>
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <ModeSelector value={mode} onChange={setMode} disabled={busy} />
+            <div className="mt-6 flex-1 min-h-0 flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0">
+                {mode === 'summary' && <SummaryView data={summaryData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
+                {mode === 'quiz' && <QuizView data={quizData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
+                {mode === 'flashcards' && <FlashcardsView data={flashcardsData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
+                {mode === 'chat' && <ChatView messages={chatMessages} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
+              </div>
+              <div className="mt-auto flex justify-center pb-8">
+                {mode === 'chat' ? (
+                  <FloatingInput mode={mode} question={question} setQuestion={setQuestion} onSubmit={run} disabled={busy || !combinedText.trim()} hasMaterial={hasMaterial} />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={run}
+                    disabled={!canSubmit || busy}
+                    className="rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600/50 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-blue-600/40 hover:shadow-blue-600/60 transition disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {hasMaterial ? (loading ? t('processing') : t('runAssistant')) : t('uploadOrWrite')}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

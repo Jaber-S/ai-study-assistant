@@ -6,13 +6,23 @@ const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.en
 
 export async function signInWithGoogle() {
   if (!isSupabaseConfigured) throw new Error('Supabase no está configurado. Agrega las variables de entorno.');
-  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/dashboard`
+    }
+  });
   if (error) throw error;
 }
 
 export async function signInWithFacebook() {
   if (!isSupabaseConfigured) throw new Error('Supabase no está configurado. Agrega las variables de entorno.');
-  const { error } = await supabase.auth.signInWithOAuth({ provider: 'facebook' });
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'facebook',
+    options: {
+      redirectTo: `${window.location.origin}/dashboard`
+    }
+  });
   if (error) throw error;
 }
 
@@ -62,11 +72,17 @@ export default function Auth({ onAuthSuccess, initialMode = 'signin' }) {
     setLoading(true);
 
     try {
-      const authMethod = mode === 'signup'
-        ? supabase.auth.signUp({ email, password })
-        : supabase.auth.signInWithPassword({ email, password });
+      let { data, error: authError } = await supabase.auth.signUp({ email, password });
 
-      const { data, error: authError } = await authMethod;
+      // If signup fails because user already exists, try signing in instead
+      if (authError && authError.message.includes('User already registered')) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        data = signInData;
+        authError = signInError;
+        if (!authError) {
+          setInfo('Ya tienes una cuenta. Has iniciado sesión automáticamente.');
+        }
+      }
 
       if (authError) {
         setError(authError.message);
