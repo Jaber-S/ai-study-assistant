@@ -1,13 +1,34 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, Users, ArrowRight } from 'lucide-react';
 import Auth, { signInWithGoogle, signInWithFacebook } from '../components/Auth.jsx';
 
-export default function LandingPage({ session }) {
+export default function LandingPage({ session, isLoading }) {
   const navigate = useNavigate();
   const authSectionRef = useRef(null);
   const [authError, setAuthError] = useState('');
   const [authMode, setAuthMode] = useState('signin');
+
+  // Redirect to dashboard if user is already authenticated
+  useEffect(() => {
+    console.log('LandingPage: session updated', { hasSession: !!session, isLoading });
+    if (session && !isLoading) {
+      console.log('LandingPage: Redirecting to dashboard', { email: session.user?.email });
+      navigate('/dashboard', { replace: true });
+    }
+  }, [session, isLoading, navigate]);
+
+  // Show loading screen while auth is initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mx-auto mb-3"></div>
+          <p className="text-gray-400">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
 
   const scrollToAuth = () => {
     setAuthMode('signin');
@@ -29,6 +50,15 @@ export default function LandingPage({ session }) {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.2),_transparent_35%)]" />
         <div className="relative mx-auto max-w-6xl px-6">
           <div className="flex min-h-[calc(100vh-6rem)] flex-col items-center justify-center text-center">
+            {/* Main Banner Logo */}
+            <div className="mb-8 animate-fade-in">
+              <img 
+                src="/VibeStudy_banner.png" 
+                alt="VibeStudy Banner" 
+                className="h-auto w-full max-w-lg object-contain drop-shadow-lg"
+              />
+            </div>
+
             <p className="mb-6 inline-flex rounded-full bg-sky-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-sky-300">
               IA para tus estudios
             </p>
@@ -92,29 +122,13 @@ export default function LandingPage({ session }) {
         <div className="rounded-[2rem] border border-white/10 bg-slate-950/90 p-8 shadow-[0_32px_120px_-70px_rgba(56,189,248,0.6)]">
           <div className="mb-8 text-center">
             <p className="text-sm uppercase tracking-[0.35em] text-sky-400">Entrada segura</p>
-            <h2 className="mt-4 text-3xl font-semibold text-white">
-              {session ? 'Bienvenido de nuevo' : 'Accede a tu cuenta'}
-            </h2>
+            <h2 className="mt-4 text-3xl font-semibold text-white">Accede a tu cuenta</h2>
             <p className="mt-3 text-slate-400">
-              {session ? 'Ya tienes sesión iniciada. Abre el dashboard para continuar.' : 'Inicia sesión o regístrate para usar el asistente de estudio.'}
+              Inicia sesión o regístrate para usar el asistente de estudio.
             </p>
           </div>
 
-          {!session ? (
-            <Auth initialMode={authMode} onAuthSuccess={() => navigate('/dashboard', { replace: true })} />
-          ) : (
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-8 text-center text-slate-300">
-              <p className="text-lg font-semibold text-white">Tu sesión está activa</p>
-              <p className="mt-3">Pulsa el botón para acceder al dashboard y comenzar a estudiar.</p>
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard', { replace: true })}
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-sky-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-400"
-              >
-                Ir al dashboard <ArrowRight size={16} />
-              </button>
-            </div>
-          )}
+          <Auth initialMode={authMode} onAuthSuccess={() => navigate('/dashboard', { replace: true })} />
         </div>
       </section>
     </div>

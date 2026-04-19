@@ -1,36 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import { SourceUpload } from "./SourceUpload.jsx";
 import { LanguageSwitcher } from "./LanguageSwitcher.jsx";
-import { Trash2, LogOut } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
-export function Sidebar({ disabled, parsing, uploads, onFilesSelected, onRemoveUpload, text, setText, sourceError, onReset, userName, onSignOut }) {
+export function Sidebar({ disabled, parsing, uploads, onFilesSelected, onRemoveUpload, text, setText, sourceError, onReset }) {
   const { t } = useTranslation();
 
   return (
     <aside className="w-80 bg-[#0d0d0d] border-r border-white/10 h-screen hidden md:flex flex-col backdrop-blur-sm">
       {/* Logo Section */}
       <div className="p-6 border-b border-white/5">
-        <div className="flex items-start justify-between gap-4">
-          <img src="/VibeStudy_banner.png" alt="VibeStudy Banner" className="h-14" />
-          {userName && (
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="text-slate-300 hover:text-white transition"
-              title="Cerrar sesión"
-            >
-              <LogOut size={18} />
-            </button>
-          )}
-        </div>
-        {userName ? (
-          <div className="mt-5 rounded-2xl bg-slate-950/80 border border-white/10 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-sky-300">Bienvenido</p>
-            <p className="mt-2 text-lg font-semibold text-white">{userName}</p>
-          </div>
-        ) : (
-          <p className="mt-5 text-sm text-gray-400">Inicia sesión para acceder a tu dashboard.</p>
-        )}
+        <img src="/VibeStudy_banner.png" alt="VibeStudy Banner" className="h-14" />
       </div>
 
       {/* Language Switcher */}

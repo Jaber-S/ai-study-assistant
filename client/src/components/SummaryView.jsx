@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useState, useEffect } from 'react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
 // Function to strip markdown and get plain text
@@ -18,6 +19,34 @@ function stripMarkdown(text) {
 
 export function SummaryView({ data, loading, error, onRetry, hasRun }) {
   const { t } = useTranslation();
+  const [displayedData, setDisplayedData] = useState('');
+
+  // Stream text effect
+  useEffect(() => {
+    if (!data) {
+      setDisplayedData('');
+      return;
+    }
+
+    let currentIndex = 0;
+    const fullData = data;
+    
+    // Reset displayed data when new data arrives
+    setDisplayedData('');
+    
+    const interval = setInterval(() => {
+      currentIndex += 15; // Show 15 characters at a time
+      
+      if (currentIndex >= fullData.length) {
+        currentIndex = fullData.length;
+        clearInterval(interval);
+      }
+
+      setDisplayedData(fullData.substring(0, currentIndex));
+    }, 50); // Update every 50ms (slower than before for better readability)
+
+    return () => clearInterval(interval);
+  }, [data]);
 
   const handleCopy = async () => {
     const plainText = stripMarkdown(data);
@@ -59,9 +88,11 @@ export function SummaryView({ data, loading, error, onRetry, hasRun }) {
   if (!data) return null;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-800/50 p-6 h-full min-h-0 overflow-y-auto">
-      <MarkdownRenderer content={data} />
-      <div className="mt-4 flex justify-end">
+    <div className="w-full h-full flex flex-col rounded-xl border border-white/10 bg-gray-800/50">
+      <div className="flex-1 min-h-0 overflow-y-auto p-6">
+        <MarkdownRenderer content={displayedData} />
+      </div>
+      <div className="border-t border-white/10 p-4 flex justify-end flex-shrink-0">
         <button
           onClick={handleCopy}
           className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1"

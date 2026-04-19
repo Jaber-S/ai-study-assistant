@@ -9,11 +9,24 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Create a dummy client if env vars are missing to prevent crashes
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      },
+    })
   : {
       auth: {
-        getSession: () => Promise.resolve({ data: { session: null } }),
-        onAuthStateChange: () => ({ subscription: { unsubscribe: () => {} } }),
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ 
+          data: { 
+            subscription: { 
+              unsubscribe: () => {} 
+            } 
+          } 
+        }),
         signInWithOAuth: () => Promise.reject(new Error('Supabase not configured')),
         signUp: () => Promise.reject(new Error('Supabase not configured')),
         signInWithPassword: () => Promise.reject(new Error('Supabase not configured')),

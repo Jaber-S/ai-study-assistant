@@ -193,17 +193,16 @@ export default function Dashboard({ user }) {
         setText={setText}
         sourceError={sourceError}
         onReset={resetAllData}
-        userName={displayName}
       />
       <main className="flex-1 bg-[#121212] p-6 pt-8 h-screen flex flex-col overflow-hidden">
-        <div className="max-w-5xl w-full mx-auto">
+        <div className="max-w-5xl w-full mx-auto h-full flex flex-col">
           <div className="flex justify-end mb-6">
             <UserMenu user={user} />
           </div>
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-col flex-1 min-h-0">
             <ModeSelector value={mode} onChange={setMode} disabled={busy} />
-            <div className="mt-6 flex-1 min-h-0 flex flex-col overflow-hidden">
-              <div className="flex-1 min-h-0">
+            <div className="mt-6 flex-1 min-h-0 flex flex-col">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 {mode === 'summary' && <SummaryView data={summaryData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
                 {mode === 'quiz' && <QuizView data={quizData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
                 {mode === 'flashcards' && <FlashcardsView data={flashcardsData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
