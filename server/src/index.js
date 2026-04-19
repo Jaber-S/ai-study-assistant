@@ -5,8 +5,15 @@ import { createAiRouter } from "./routes/ai.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3007;
-const DEFAULT_MODEL = "openrouter/auto";
+const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001";
 const apiKey = process.env.OPENROUTER_API_KEY;
+
+if (!apiKey) {
+  console.warn("⚠️  OPENROUTER_API_KEY is not set in .env file");
+} else {
+  console.log("✓ OPENROUTER_API_KEY is configured");
+  console.log(`✓ Using model: ${DEFAULT_MODEL}`);
+}
 
 app.use(
   cors({

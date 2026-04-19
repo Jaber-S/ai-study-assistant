@@ -248,7 +248,7 @@ async function runChatCompletionWithRetries({
         "Content-Type": "application/json",
         "HTTP-Referer":
           process.env.OPENROUTER_HTTP_REFERER || "http://localhost:5173",
-        "X-Title": "AI Study Assistant",
+        "X-Title": "VibeStudy",
       },
       body,
     });
