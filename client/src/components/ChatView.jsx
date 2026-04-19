@@ -14,13 +14,13 @@ export function ChatView({ messages, loading, error, onRetry, hasRun }) {
       displayedContent: msg.content
     })));
     lastMessageIdRef.current = null;
-  }, [messages.length]); // Reset when message count changes
+  }, [messages]); // Sync whenever messages changes (not just length)
 
   // Animate only the last assistant message
   useEffect(() => {
-    if (displayedMessages.length === 0) return;
+    if (messages.length === 0) return;
 
-    const lastMessage = displayedMessages[displayedMessages.length - 1];
+    const lastMessage = messages[messages.length - 1];
     
     // Only animate if it's an assistant message and hasn't been animated yet
     if (lastMessage.role !== 'assistant' || lastMessageIdRef.current === lastMessage.content) {
@@ -61,7 +61,7 @@ export function ChatView({ messages, loading, error, onRetry, hasRun }) {
     }, 50); // Update every 50ms (slower streaming)
 
     return () => clearInterval(interval);
-  }, [messages.length]); // Only re-run when message count changes (new message arrived)
+  }, [messages]); // Depend on messages, read last message from here (source of truth)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
