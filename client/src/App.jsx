@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient.js";
+import { NotebookProvider } from "./context/NotebookContext.jsx";
 import LandingPage from "./routes/LandingPage.jsx";
 import Dashboard from "./routes/Dashboard.jsx";
 import ResetPassword from "./routes/ResetPassword.jsx";
@@ -95,7 +96,9 @@ export default function App() {
           path="/dashboard"
           element={
             <ProtectedRoute session={session} isLoading={isLoading}>
-              <Dashboard user={user} />
+              <NotebookProvider userId={user?.id}>
+                <Dashboard user={user} />
+              </NotebookProvider>
             </ProtectedRoute>
           }
         />

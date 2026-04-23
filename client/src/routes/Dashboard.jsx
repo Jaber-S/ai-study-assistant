@@ -9,6 +9,9 @@ import { QuizView } from '../components/QuizView.jsx';
 import { FlashcardsView } from '../components/FlashcardsView.jsx';
 import { ChatView } from '../components/ChatView.jsx';
 import UserMenu from '../components/UserMenu.jsx';
+import { NotebookSelector } from '../components/NotebookSelector.jsx';
+import { NotebookHeader } from '../components/NotebookHeader.jsx';
+import { useNotebooks } from '../context/NotebookContext.jsx';
 import { buildStudyMaterialText } from '../utils/buildStudyMaterial.js';
 import { extractTextFromFile } from '../utils/extractFileText.js';
 import { useTranslation } from 'react-i18next';
@@ -58,8 +61,12 @@ const saveToStorage = (key, value) => {
 export default function Dashboard({ user }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { activeNotebookId, activeNotebook, addSource, isLoading: notebooksLoading } = useNotebooks();
   const [text, setText] = useState(() => loadFromStorage('text', ''));
-  const [uploads, setUploads] = useState(() => loadFromStorage('uploads', []));
+  const [uploads, setUploads] = useState(() => {
+    // When component mounts, load uploads from active notebook if available
+    return [];
+  });
   const [parsingFiles, setParsingFiles] = useState(false);
   const [mode, setMode] = useState(() => loadFromStorage('mode', 'chat'));
   const [question, setQuestion] = useState('');
@@ -78,21 +85,46 @@ export default function Dashboard({ user }) {
     return hasSummary || hasQuiz || hasFlashcards || hasChat;
   });
 
+  // Load notebook data when active notebook changes
+  useEffect(() => {
+    if (activeNotebook) {
+      setUploads(activeNotebook.sources || []);
+      setText('');
+      setSummaryData('');
+      setQuizData([]);
+      setFlashcardsData([]);
+      setChatMessages(activeNotebook.chatHistory || []);
+      setHasRun((activeNotebook.chatHistory?.length || 0) > 0);
+    }
+  }, [activeNotebook?.id]);
+
   const displayName = user?.user_metadata?.full_name || user?.email || 'Estudiante';
 
   useEffect(() => saveToStorage('text', text), [text]);
-  useEffect(() => saveToStorage('uploads', uploads), [uploads]);
+  useEffect(() => {
+    // Only save uploads to localStorage if no active notebook
+    if (!activeNotebookId) {
+      saveToStorage('uploads', uploads);
+    }
+  }, [uploads, activeNotebookId]);
   useEffect(() => saveToStorage('mode', mode), [mode]);
   useEffect(() => saveToStorage('summaryData', summaryData), [summaryData]);
   useEffect(() => saveToStorage('quizData', quizData), [quizData]);
   useEffect(() => saveToStorage('flashcardsData', flashcardsData), [flashcardsData]);
-  useEffect(() => saveToStorage('chatMessages', chatMessages), [chatMessages]);
+  useEffect(() => {
+    // Save chat messages to both localStorage and active notebook
+    saveToStorage('chatMessages', chatMessages);
+    if (activeNotebook && activeNotebookId) {
+      // The notebook context handles this internally
+    }
+  }, [chatMessages, activeNotebook, activeNotebookId]);
   useEffect(() => saveToStorage('hasRun', hasRun), [hasRun]);
 
   const resetAllData = useCallback(() => {
     const confirmed = window.confirm(
       '¿Estás seguro de que quieres reiniciar los resultados generados? Esta acción eliminará el historial de chat, resúmenes, quizzes y flashcards de forma permanente. Las fuentes permanecerán intactas.'
     );
+
 
     if (confirmed) {
       setSummaryData('');
@@ -133,7 +165,13 @@ export default function Dashboard({ user }) {
           if (!trimmed) {
             throw new Error(`“${file.name}” has no extractable text. Try another file or paste the text instead.`);
           }
-          nextUploads.push({ id: crypto.randomUUID(), name: file.name, text: trimmed });
+          const uploadObj = { id: crypto.randomUUID(), name: file.name, text: trimmed };
+          nextUploads.push(uploadObj);
+          
+          // If active notebook, save source to it
+          if (activeNotebook && activeNotebookId) {
+            addSource(activeNotebookId, uploadObj);
+          }
         }
         setUploads((prev) => [...prev, ...nextUploads]);
       } catch (err) {
@@ -142,7 +180,7 @@ export default function Dashboard({ user }) {
         setParsingFiles(false);
       }
     },
-    [loading, parsingFiles]
+    [loading, parsingFiles, activeNotebook, activeNotebookId, addSource]
   );
 
   const removeUpload = useCallback((id) => setUploads((prev) => prev.filter((u) => u.id !== id)), []);
@@ -181,51 +219,70 @@ export default function Dashboard({ user }) {
 
   const busy = loading || parsingFiles;
 
+  // Show notebook selector if no active notebook or notebooks still loading
+  if (notebooksLoading) {
+    return (
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mx-auto mb-3"></div>
+          <p className="text-gray-400">{t('loadingNotebooks') || 'Loading notebooks...'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeNotebookId) {
+    return <NotebookSelector user={user} />;
+  }
+
   return (
-    <div className="min-h-screen bg-[#0d0d0d] text-white flex overflow-hidden">
-      <Sidebar
-        disabled={busy}
-        parsing={parsingFiles}
-        uploads={uploads}
-        onFilesSelected={handleFilesSelected}
-        onRemoveUpload={removeUpload}
-        text={text}
-        setText={setText}
-        sourceError={sourceError}
-        onReset={resetAllData}
-      />
-      <main className="flex-1 bg-[#121212] p-6 pt-8 h-screen flex flex-col overflow-hidden">
-        <div className="max-w-5xl w-full mx-auto h-full flex flex-col">
-          <div className="flex justify-end mb-6">
-            <UserMenu user={user} />
-          </div>
-          <div className="flex flex-col flex-1 min-h-0">
-            <ModeSelector value={mode} onChange={setMode} disabled={busy} />
-            <div className="mt-6 flex-1 min-h-0 flex flex-col">
-              <div className="flex-1 min-h-0 overflow-hidden">
-                {mode === 'summary' && <SummaryView data={summaryData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
-                {mode === 'quiz' && <QuizView data={quizData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
-                {mode === 'flashcards' && <FlashcardsView data={flashcardsData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
-                {mode === 'chat' && <ChatView messages={chatMessages} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
-              </div>
-              <div className="mt-auto flex justify-center pb-8">
-                {mode === 'chat' ? (
-                  <FloatingInput mode={mode} question={question} setQuestion={setQuestion} onSubmit={run} disabled={busy || !combinedText.trim()} hasMaterial={hasMaterial} />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={run}
-                    disabled={!canSubmit || busy}
-                    className="rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600/50 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-blue-600/40 hover:shadow-blue-600/60 transition disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {hasMaterial ? (loading ? t('processing') : t('runAssistant')) : t('uploadOrWrite')}
-                  </button>
-                )}
+    <div className="min-h-screen bg-[#0d0d0d] text-white flex flex-col overflow-hidden">
+      <NotebookHeader />
+      <div className="flex-1 flex overflow-hidden">
+        <Sidebar
+          disabled={busy}
+          parsing={parsingFiles}
+          uploads={uploads}
+          onFilesSelected={handleFilesSelected}
+          onRemoveUpload={removeUpload}
+          text={text}
+          setText={setText}
+          sourceError={sourceError}
+          onReset={resetAllData}
+        />
+        <main className="flex-1 bg-[#121212] p-6 pt-8 h-full flex flex-col overflow-hidden">
+          <div className="max-w-5xl w-full mx-auto h-full flex flex-col">
+            <div className="flex justify-end mb-6">
+              <UserMenu user={user} />
+            </div>
+            <div className="flex flex-col flex-1 min-h-0">
+              <ModeSelector value={mode} onChange={setMode} disabled={busy} />
+              <div className="mt-6 flex-1 min-h-0 flex flex-col">
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  {mode === 'summary' && <SummaryView data={summaryData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
+                  {mode === 'quiz' && <QuizView data={quizData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
+                  {mode === 'flashcards' && <FlashcardsView data={flashcardsData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
+                  {mode === 'chat' && <ChatView messages={chatMessages} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
+                </div>
+                <div className="mt-auto flex justify-center pb-8">
+                  {mode === 'chat' ? (
+                    <FloatingInput mode={mode} question={question} setQuestion={setQuestion} onSubmit={run} disabled={busy || !combinedText.trim()} hasMaterial={hasMaterial} />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={run}
+                      disabled={!canSubmit || busy}
+                      className="rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600/50 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-blue-600/40 hover:shadow-blue-600/60 transition disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {hasMaterial ? (loading ? t('processing') : t('runAssistant')) : t('uploadOrWrite')}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

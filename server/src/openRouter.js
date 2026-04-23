@@ -59,6 +59,16 @@ function shouldRetryOpenRouter(httpStatus, apiMessage, data) {
   return false;
 }
 
+function failureWarrantsModelFallback(message) {
+  const msg = typeof message === "string" ? message : "";
+  return (
+    textLooksRateLimited(msg) ||
+    /provider returned error|temporarily unavailable|model .*not found|no endpoints found|timeout|overloaded/i.test(
+      msg
+    )
+  );
+}
+
 function retryDelayMs(attemptIndex, data, apiMessage) {
   const blob = JSON.stringify(data ?? {}) + (apiMessage || "");
   const slow = textLooksRateLimited(blob, apiMessage) || data?.error?.code === 429;

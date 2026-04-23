@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test localStorage - VibeStudy</title>
+    <style>
+        body {
+            background: #0d0d0d;
+            color: white;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0284c7;
+        }
+        .log {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test localStorage de VibeStudy</h1>
+    
+    <div class="section">
+        <h2>1. Test Básico</h2>
+        <button onclick="testBasicStorage()">Probar localStorage básico</button>
+        <div id="basicLog" class="log"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Simular Creación de Cuaderno</h2>
+        <label>User ID: <input type="text" id="userId" value="test-user-123" style="padding: 5px; border-radius: 4px; background: #222; color: white; border: 1px solid #444;"></label>
+        <button onclick="simulateCreateNotebook()">Crear cuaderno simulado</button>
+        <div id="createLog" class="log"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Ver localStorage actual</h2>
+        <button onclick="showAllStorage()">Ver todo localStorage</button>
+        <div id="storageLog" class="log"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Limpiar localStorage</h2>
+        <button onclick="clearAllStorage()" style="background: #ef4444;">🗑️ Limpiar TODO localStorage</button>
+        <div id="clearLog" class="log"></div>
+    </div>
+
+    <script>
+        function log(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = isError ? 'error' : 'success';
+            el.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function testBasicStorage() {
+            const basicLog = 'basicLog';
+            log(basicLog, '--- Iniciando test básico ---');
+            
+            try {
+                // Test 1: Guardar
+                localStorage.setItem('test_key', 'test_value');
+                log(basicLog, '✓ Guardado: test_key = test_value');
+                
+                // Test 2: Recuperar
+                const value = localStorage.getItem('test_key');
+                if (value === 'test_value') {
+                    log(basicLog, '✓ Recuperado correctamente: ' + value);
+                } else {
+                    log(basicLog, '✗ Valor incorrecto: ' + value, true);
+                }
+                
+                // Test 3: Limpiar
+                localStorage.removeItem('test_key');
+                const cleared = localStorage.getItem('test_key');
+                if (cleared === null) {
+                    log(basicLog, '✓ Limpiado correctamente');
+                } else {
+                    log(basicLog, '✗ No se limpió: ' + cleared, true);
+                }
+                
+                log(basicLog, '✓ Test básico completado');
+            } catch (error) {
+                log(basicLog, '✗ Error: ' + error.message, true);
+            }
+        }
+
+        function simulateCreateNotebook() {
+            const createLog = 'createLog';
+            const userId = document.getElementById('userId').value || 'test-user';
+            
+            log(createLog, '--- Simulando creación de cuaderno ---');
+            log(createLog, 'User ID: ' + userId);
+            
+            try {
+                // Crear cuaderno
+                const notebook = {
+                    id: `nb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    title: 'Cuaderno de Prueba',
+                    description: 'Creado desde localStorage-test.html',
+                    sources: [],
+                    notes: '',
+                    chatHistory: [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                log(createLog, 'Cuaderno creado: ' + JSON.stringify(notebook, null, 2));
+                
+                // Guardar en localStorage
+                const key = `notebooks_${userId}`;
+                const existing = localStorage.getItem(key);
+                let notebooks = existing ? JSON.parse(existing) : [];
+                notebooks.unshift(notebook);
+                
+                localStorage.setItem(key, JSON.stringify(notebooks));
+                log(createLog, '✓ Guardado en: ' + key);
+                log(createLog, '✓ Total de cuadernos: ' + notebooks.length);
+                
+                // Guardar active notebook
+                const activeKey = `activeNotebook_${userId}`;
+                localStorage.setItem(activeKey, notebook.id);
+                log(createLog, '✓ Cuaderno activo guardado: ' + activeKey + ' = ' + notebook.id);
+                
+                // Verificar lectura
+                const savedNotebooks = JSON.parse(localStorage.getItem(key));
+                log(createLog, '✓ Verificación: Recuperados ' + savedNotebooks.length + ' cuadernos');
+                
+                log(createLog, '✓ Simulación completada exitosamente');
+            } catch (error) {
+                log(createLog, '✗ Error: ' + error.message, true);
+            }
+        }
+
+        function showAllStorage() {
+            const storageLog = 'storageLog';
+            log(storageLog, '--- localStorage actual ---');
+            
+            try {
+                if (localStorage.length === 0) {
+                    log(storageLog, 'localStorage está vacío');
+                    return;
+                }
+                
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const value = localStorage.getItem(key);
+                    const size = value.length;
+                    
+                    if (key.startsWith('notebooks_') || key.startsWith('activeNotebook_')) {
+                        log(storageLog, `\n📦 ${key} (${size} bytes)`);
+                        try {
+                            const parsed = JSON.parse(value);
+                            log(storageLog, JSON.stringify(parsed, null, 2));
+                        } catch {
+                            log(storageLog, value);
+                        }
+                    }
+                }
+                
+                log(storageLog, `\n✓ Total items: ${localStorage.length}`);
+            } catch (error) {
+                log(storageLog, '✗ Error: ' + error.message, true);
+            }
+        }
+
+        function clearAllStorage() {
+            const clearLog = 'clearLog';
+            const confirmClear = confirm('¿Estás seguro de que quieres limpiar TODO localStorage?');
+            
+            if (!confirmClear) {
+                log(clearLog, 'Operación cancelada');
+                return;
+            }
+            
+            try {
+                localStorage.clear();
+                log(clearLog, '✓ localStorage completamente limpiado');
+            } catch (error) {
+                log(clearLog, '✗ Error: ' + error.message, true);
+            }
+        }
+
+        // Log inicial
+        log('basicLog', 'localStorage-test.html cargado ✓');
+    </script>
+</body>
+</html>
