@@ -9,40 +9,56 @@ const MODES = [
 
 export function ModeSelector({ value, onChange, disabled }) {
   const { t } = useTranslation();
+  const activeIndex = Math.max(
+    0,
+    MODES.findIndex((m) => m.id === value)
+  );
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
-        {t('mode')}
-      </p>
+    <div className="w-full">
+      <p className="sr-only">{t('mode')}</p>
+
       <div
-        className="flex flex-wrap gap-2"
+        className={[
+          'relative w-full rounded-2xl border border-white/10 bg-gray-800/40 backdrop-blur-sm p-1',
+          disabled ? 'opacity-60' : '',
+        ].join(' ')}
         role="tablist"
         aria-label="AI processing mode"
       >
-        {MODES.map((m) => {
-          const active = value === m.id;
-          return (
-            <button
-              key={m.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              disabled={disabled}
-              onClick={() => onChange(m.id)}
-              className={[
-                "rounded-xl px-4 py-2 text-sm font-medium transition",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212]",
-                active
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/50 backdrop-blur-sm"
-                  : "bg-gray-800/50 text-gray-300 hover:bg-gray-800/70 hover:text-white",
-                disabled ? "opacity-50 pointer-events-none" : "",
-              ].join(" ")}
-            >
-              {t(m.label)}
-            </button>
-          );
-        })}
+        <div
+          className="absolute top-1 bottom-1 left-1 rounded-xl bg-blue-600/40 transition-transform duration-300 ease-out"
+          style={{
+            width: 'calc((100% - 0.5rem) / 4)',
+            transform: `translateX(${activeIndex * 100}%)`,
+          }}
+        />
+
+        <div className="relative z-10 grid grid-cols-4">
+          {MODES.map((m) => {
+            const active = value === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                disabled={disabled}
+                onClick={() => onChange(m.id)}
+                className={[
+                  'rounded-xl py-2 text-sm font-semibold transition-colors',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212]',
+                  active
+                    ? 'text-white'
+                    : 'text-gray-300 hover:text-white',
+                  disabled ? 'pointer-events-none' : '',
+                ].join(' ')}
+              >
+                {t(m.label)}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

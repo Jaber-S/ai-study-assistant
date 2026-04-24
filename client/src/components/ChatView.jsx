@@ -92,64 +92,66 @@ export function ChatView({ messages, loading, error, onRetry, hasRun }) {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-800/50 p-6 h-full min-h-0 overflow-y-auto flex flex-col">
-      {displayedMessages.length === 0 ? (
-        <div className="flex items-center justify-center h-32">
-          <p className="text-gray-400 text-center">
-            {t('chatPlaceholder')}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {displayedMessages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+    <div className="rounded-xl border border-white/10 bg-gray-800/50 p-6 h-full min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+        {displayedMessages.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <p className="text-gray-400 text-center">
+              {t('chatPlaceholder')}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {displayedMessages.map((msg, idx) => (
               <div
-                className={`rounded-lg px-4 py-2 max-w-lg ${
-                  msg.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-200'
-                }`}
+                key={idx}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                  {msg.displayedContent}
-                </p>
-                <p className="text-xs mt-1 opacity-70">
-                  {msg.timestamp && new Date(msg.timestamp).toLocaleTimeString('es-ES', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-                {msg.role === 'assistant' && (
-                  <div className="mt-2 flex justify-end">
-                    <button
-                      onClick={() => handleCopy(msg.content)}
-                      className="text-xs text-gray-400 hover:text-gray-200 transition-colors"
-                      title="Copy text"
-                    >
-                      📋
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-700 text-gray-200 rounded-lg px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce"></div>
-                  <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div
+                  className={`rounded-lg px-4 py-2 max-w-lg ${
+                    msg.role === 'user'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-200'
+                  }`}
+                >
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                    {msg.displayedContent}
+                  </p>
+                  <p className="text-xs mt-1 opacity-70">
+                    {msg.timestamp && new Date(msg.timestamp).toLocaleTimeString('es-ES', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                  {msg.role === 'assistant' && (
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        onClick={() => handleCopy(msg.content)}
+                        className="text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                        title="Copy text"
+                      >
+                        📋
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      )}
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-700 text-gray-200 rounded-lg px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce"></div>
+                    <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

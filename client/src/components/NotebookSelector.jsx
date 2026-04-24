@@ -45,27 +45,25 @@ export function NotebookSelector({ user }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black p-8 flex flex-col">
+      {/* Banner - Top */}
+      <div className="mb-8 text-center">
+        <img 
+          src="/VibeStudy_banner.png" 
+          alt="VibeStudy Banner" 
+          className="h-auto w-full max-w-xs object-contain drop-shadow-lg mx-auto"
+        />
+      </div>
+
       {/* User Menu - Top Right */}
-      <div className="flex justify-end mb-8">
+      <div className="flex justify-end mb-8 absolute top-8 right-8">
         <UserMenu user={user} />
       </div>
 
-      <div className="max-w-7xl mx-auto flex-1">
+      <div className="max-w-7xl mx-auto flex-1 pt-8">
         {/* Header */}
         <div className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-xl bg-blue-600/20 border border-blue-500/30">
-              <BookOpen className="w-8 h-8 text-blue-400" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-white">VibeStudy</h1>
-              <p className="text-gray-400 text-sm mt-1">
-                {t('selectNotebook') || 'Selecciona un cuaderno o crea uno nuevo'}
-              </p>
-            </div>
-          </div>
           {notebooks.length > 0 && (
-            <p className="text-gray-500 text-sm ml-14">
+            <p className="text-gray-500 text-sm">
               {notebooks.length} {notebooks.length === 1 ? 'cuaderno' : 'cuadernos'} disponibles
             </p>
           )}

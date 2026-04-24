@@ -94,7 +94,7 @@ export function SummaryView({ data, loading, error, onRetry, hasRun, animateOnMo
   if (!data) return null;
 
   return (
-    <div className="w-full h-full flex flex-col rounded-xl border border-white/10 bg-gray-800/50">
+    <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-xl border border-white/10 bg-gray-800/50">
       <div className="flex-1 min-h-0 overflow-y-auto p-6">
         <MarkdownRenderer content={displayedData} />
       </div>

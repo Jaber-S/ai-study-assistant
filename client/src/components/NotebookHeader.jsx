@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, ChevronUp, ChevronDown } from 'lucide-react';
 import { useNotebooks } from '../context/NotebookContext';
 
 /**
@@ -20,18 +20,20 @@ function SaveToast({ show }) {
 /**
  * NotebookHeader - Header showing active notebook with editable title
  */
-export function NotebookHeader() {
+export function NotebookHeader({ isCollapsed, onCollapsedChange }) {
   const { t } = useTranslation();
   const { activeNotebook, setActiveNotebookId, updateNotebookMetadata } = useNotebooks();
   const [editTitle, setEditTitle] = useState(activeNotebook?.title || '');
+  const [editDescription, setEditDescription] = useState(activeNotebook?.description || '');
   const [isSaved, setIsSaved] = useState(false);
   const [showSaveToast, setShowSaveToast] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Update editTitle when activeNotebook changes
+  // Update editTitle and editDescription when activeNotebook changes
   useEffect(() => {
     if (activeNotebook) {
       setEditTitle(activeNotebook.title);
+      setEditDescription(activeNotebook.description || '');
       setHasChanges(false);
     }
   }, [activeNotebook?.id]);
@@ -40,15 +42,31 @@ export function NotebookHeader() {
   const handleTitleChange = (e) => {
     const newTitle = e.target.value;
     setEditTitle(newTitle);
-    setHasChanges(newTitle !== activeNotebook.title);
+    setHasChanges(newTitle !== activeNotebook.title || editDescription !== activeNotebook.description);
+  };
+
+  // Handle description change
+  const handleDescriptionChange = (e) => {
+    const newDescription = e.target.value;
+    setEditDescription(newDescription);
+    setHasChanges(editTitle !== activeNotebook.title || newDescription !== activeNotebook.description);
   };
 
   // Save notebook metadata
   const handleSave = () => {
-    if (activeNotebook && editTitle.trim() && editTitle !== activeNotebook.title) {
-      updateNotebookMetadata(activeNotebook.id, {
-        title: editTitle.trim()
-      });
+    if (activeNotebook && editTitle.trim()) {
+      const updates = {};
+      if (editTitle !== activeNotebook.title) {
+        updates.title = editTitle.trim();
+      }
+      if (editDescription !== activeNotebook.description) {
+        updates.description = editDescription.trim();
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        updateNotebookMetadata(activeNotebook.id, updates);
+      }
+      
       setHasChanges(false);
       setIsSaved(true);
       setShowSaveToast(true);
@@ -88,64 +106,87 @@ export function NotebookHeader() {
   return (
     <>
       <SaveToast show={showSaveToast} />
-      
-      <div className="border-b border-white/10 bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            {/* Back button */}
-            <button
-              onClick={handleBack}
-              className="flex-shrink-0 p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-              title={t('back') || 'Volver'}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
 
-            {/* Editable title */}
-            <div className="flex-1 min-w-0">
-              <input
-                type="text"
-                value={editTitle}
-                onChange={handleTitleChange}
-                onKeyPress={handleKeyPress}
-                className="w-full text-xl font-bold text-white bg-transparent border-0 border-b-2 border-transparent hover:border-blue-500/50 focus:border-blue-500 focus:outline-none transition-colors px-0 py-1"
-                placeholder={t('notebookTitle') || 'Título del cuaderno'}
-              />
-              {activeNotebook.description && (
-                <p className="text-xs text-gray-400 mt-1">{activeNotebook.description}</p>
-              )}
+      {/* Fixed overlay that slides up/down; when collapsed it leaves the toggle button visible */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 ease-in-out ${
+          isCollapsed ? 'translate-y-[calc(-100%+3.5rem)]' : 'translate-y-0'
+        }`}
+      >
+        <div className="border-b border-white/10 bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-md">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              {/* Back button */}
+              <button
+                onClick={handleBack}
+                className="flex-shrink-0 p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                title={t('back') || 'Volver'}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+
+              {/* Editable title */}
+              <div className="flex-1 min-w-0">
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={handleTitleChange}
+                  onKeyPress={handleKeyPress}
+                  className="w-full text-xl font-bold text-white bg-transparent border-0 border-b-2 border-transparent hover:border-blue-500/50 focus:border-blue-500 focus:outline-none transition-colors px-0 py-1"
+                  placeholder={t('notebookTitle') || 'Título del cuaderno'}
+                />
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={handleDescriptionChange}
+                  onKeyPress={handleKeyPress}
+                  className="w-full text-xs text-gray-400 bg-transparent border-0 border-b-2 border-transparent hover:border-blue-500/50 focus:border-blue-500 focus:outline-none transition-colors px-0 py-1 mt-2"
+                  placeholder={t('notebookDescription') || 'Descripción del cuaderno'}
+                />
+              </div>
+
+              {/* Save button */}
+              <button
+                onClick={handleSave}
+                disabled={!hasChanges || !editTitle.trim()}
+                className={`flex-shrink-0 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  isSaved
+                    ? 'bg-green-600 text-white'
+                    : hasChanges
+                    ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                }`}
+                title={hasChanges ? t('save') : t('noChanges')}
+              >
+                {isSaved ? (
+                  <>
+                    <Check className="w-4 h-4 inline mr-1" />
+                    {t('saved') || 'Guardado'}
+                  </>
+                ) : (
+                  t('save') || 'Guardar'
+                )}
+              </button>
             </div>
 
-            {/* Save button */}
-            <button
-              onClick={handleSave}
-              disabled={!hasChanges || !editTitle.trim()}
-              className={`flex-shrink-0 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                isSaved
-                  ? 'bg-green-600 text-white'
-                  : hasChanges
-                  ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                  : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              }`}
-              title={hasChanges ? t('save') : t('noChanges')}
-            >
-              {isSaved ? (
-                <>
-                  <Check className="w-4 h-4 inline mr-1" />
-                  {t('saved') || 'Guardado'}
-                </>
-              ) : (
-                t('save') || 'Guardar'
-              )}
-            </button>
+            {/* Info row */}
+            <div className="flex gap-6 mt-4 text-xs text-gray-500 px-0">
+              <span>📄 {activeNotebook.sources?.length || 0} {t('sources') || 'fuentes'}</span>
+              <span>💬 {activeNotebook.chatHistory?.length || 0} {t('messages') || 'mensajes'}</span>
+              <span>📅 {new Date(activeNotebook.createdAt).toLocaleDateString('es-ES')}</span>
+            </div>
           </div>
+        </div>
 
-          {/* Info row */}
-          <div className="flex gap-6 mt-4 text-xs text-gray-500 px-0">
-            <span>📄 {activeNotebook.sources.length} {t('sources') || 'fuentes'}</span>
-            <span>💬 {activeNotebook.chatHistory.length} {t('messages') || 'mensajes'}</span>
-            <span>📅 {new Date(activeNotebook.createdAt).toLocaleDateString('es-ES')}</span>
-          </div>
+        {/* Single toggle button (same for retract/expand), placed just below header and moving with it */}
+        <div className="flex justify-center h-14 items-center">
+          <button
+            onClick={() => onCollapsedChange?.(!isCollapsed)}
+            className="flex items-center justify-center px-4 py-2 rounded-full bg-gray-800/60 hover:bg-gray-700/70 text-gray-300 hover:text-white transition-colors text-sm border border-white/10 backdrop-blur-sm"
+            title={isCollapsed ? 'Mostrar barra' : 'Contraer barra'}
+          >
+            {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+          </button>
         </div>
       </div>
     </>

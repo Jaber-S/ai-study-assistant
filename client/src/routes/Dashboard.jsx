@@ -61,7 +61,17 @@ const saveToStorage = (key, value) => {
 export default function Dashboard({ user }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activeNotebookId, activeNotebook, addSource, isLoading: notebooksLoading } = useNotebooks();
+  const {
+    activeNotebookId,
+    activeNotebook,
+    lastCreatedNotebookId,
+    clearLastCreatedNotebookId,
+    addSource,
+    isLoading: notebooksLoading,
+    updateSummaryData,
+    updateQuizData,
+    updateFlashcardsData,
+  } = useNotebooks();
   const [text, setText] = useState(() => loadFromStorage('text', ''));
   const [uploads, setUploads] = useState(() => {
     // When component mounts, load uploads from active notebook if available
@@ -85,18 +95,28 @@ export default function Dashboard({ user }) {
     const hasChat = loadFromStorage('chatMessages', []).length > 0;
     return hasSummary || hasQuiz || hasFlashcards || hasChat;
   });
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
   // Load notebook data when active notebook changes
   useEffect(() => {
     if (activeNotebook) {
       setUploads(activeNotebook.sources || []);
       setText('');
-      setSummaryData('');
+      setSummaryData(activeNotebook.summaryData || '');
       setAnimateSummary(false);
-      setQuizData([]);
-      setFlashcardsData([]);
+      setQuizData(activeNotebook.quizData || []);
+      setFlashcardsData(activeNotebook.flashcardsData || []);
       setChatMessages(activeNotebook.chatHistory || []);
-      setHasRun((activeNotebook.chatHistory?.length || 0) > 0);
+      setHasRun((activeNotebook.chatHistory?.length || 0) > 0 || (activeNotebook.summaryData?.length || 0) > 0);
+
+      // Header behavior:
+      // - Newly created notebook: expand so user can name it.
+      // - Existing notebook (re-enter): collapsed by default.
+      const shouldExpand = activeNotebook.id === lastCreatedNotebookId;
+      setHeaderCollapsed(!shouldExpand);
+      if (shouldExpand) {
+        clearLastCreatedNotebookId();
+      }
     }
   }, [activeNotebook?.id]);
 
@@ -116,9 +136,24 @@ export default function Dashboard({ user }) {
     }
   }, [uploads, activeNotebookId]);
   useEffect(() => saveToStorage('mode', mode), [mode]);
-  useEffect(() => saveToStorage('summaryData', summaryData), [summaryData]);
-  useEffect(() => saveToStorage('quizData', quizData), [quizData]);
-  useEffect(() => saveToStorage('flashcardsData', flashcardsData), [flashcardsData]);
+  useEffect(() => {
+    saveToStorage('summaryData', summaryData);
+    if (activeNotebookId) {
+      updateSummaryData(activeNotebookId, summaryData);
+    }
+  }, [summaryData, activeNotebookId, updateSummaryData]);
+  useEffect(() => {
+    saveToStorage('quizData', quizData);
+    if (activeNotebookId) {
+      updateQuizData(activeNotebookId, quizData);
+    }
+  }, [quizData, activeNotebookId, updateQuizData]);
+  useEffect(() => {
+    saveToStorage('flashcardsData', flashcardsData);
+    if (activeNotebookId) {
+      updateFlashcardsData(activeNotebookId, flashcardsData);
+    }
+  }, [flashcardsData, activeNotebookId, updateFlashcardsData]);
   useEffect(() => {
     // Save chat messages to both localStorage and active notebook
     saveToStorage('chatMessages', chatMessages);
@@ -246,8 +281,8 @@ export default function Dashboard({ user }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] text-white flex flex-col overflow-hidden">
-      <NotebookHeader />
+    <div className="h-screen bg-[#0d0d0d] text-white flex flex-col overflow-hidden">
+      <NotebookHeader isCollapsed={headerCollapsed} onCollapsedChange={setHeaderCollapsed} />
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
           disabled={busy}
@@ -260,15 +295,15 @@ export default function Dashboard({ user }) {
           sourceError={sourceError}
           onReset={resetAllData}
         />
-        <main className="flex-1 bg-[#121212] p-6 pt-8 h-full flex flex-col overflow-hidden">
+        <main className="flex-1 bg-[#121212] p-6 h-full flex flex-col overflow-hidden">
           <div className="max-w-5xl w-full mx-auto h-full flex flex-col">
             <div className="flex justify-end mb-6">
               <UserMenu user={user} />
             </div>
             <div className="flex flex-col flex-1 min-h-0">
               <ModeSelector value={mode} onChange={setMode} disabled={busy} />
-              <div className="mt-6 flex-1 min-h-0 flex flex-col">
-                <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="mt-6 flex-1 min-h-0 flex flex-col max-h-screen">
+                <div className="flex-1 min-h-0 overflow-y-auto">
                   {mode === 'summary' && (
                     <SummaryView
                       data={summaryData}
@@ -284,7 +319,7 @@ export default function Dashboard({ user }) {
                   {mode === 'flashcards' && <FlashcardsView data={flashcardsData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
                   {mode === 'chat' && <ChatView messages={chatMessages} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
                 </div>
-                <div className="mt-auto flex justify-center pb-8">
+                <div className="mt-auto flex justify-center pb-4">
                   {mode === 'chat' ? (
                     <FloatingInput mode={mode} question={question} setQuestion={setQuestion} onSubmit={run} disabled={busy || !combinedText.trim()} hasMaterial={hasMaterial} />
                   ) : (
@@ -294,7 +329,11 @@ export default function Dashboard({ user }) {
                       disabled={!canSubmit || busy}
                       className="rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600/50 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-blue-600/40 hover:shadow-blue-600/60 transition disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {hasMaterial ? (loading ? t('processing') : t('runAssistant')) : t('uploadOrWrite')}
+                      {hasMaterial
+                        ? (loading
+                          ? t('processing')
+                          : `${t('generate') || 'Generar'} ${(t(mode) || mode).toLowerCase()}`)
+                        : t('uploadOrWrite')}
                     </button>
                   )}
                 </div>

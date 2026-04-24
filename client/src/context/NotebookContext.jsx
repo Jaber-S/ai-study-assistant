@@ -1,10 +1,12 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabaseClient.js';
 
 export const NotebookContext = createContext();
 
 /**
  * NotebookProvider - Global state management for notebooks
  * Provides notebooks list, active notebook, and CRUD operations
+ * Syncs with Supabase for permanent storage
  */
 export function NotebookProvider({ children, userId }) {
   const [notebooks, setNotebooks] = useState([]);
@@ -13,8 +15,9 @@ export function NotebookProvider({ children, userId }) {
   const [hasLoadedForUser, setHasLoadedForUser] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [shouldSkipSave, setShouldSkipSave] = useState(true);
+  const [lastCreatedNotebookId, setLastCreatedNotebookId] = useState(null);
 
-  // Load notebooks from localStorage when userId changes
+  // Load notebooks from Supabase when userId changes
   useEffect(() => {
     console.log('[NotebookContext] Load effect triggered with userId:', userId, 'hasLoadedForUser:', hasLoadedForUser);
     
@@ -41,57 +44,140 @@ export function NotebookProvider({ children, userId }) {
     setIsLoadingData(true);
     setIsLoading(true);
 
-    try {
-      const key = `notebooks_${userId}`;
-      const activeKey = `activeNotebook_${userId}`;
-      
-      const savedNotebooks = localStorage.getItem(key);
-      const savedActiveId = localStorage.getItem(activeKey);
-      
-      console.log('[NotebookContext] Found in localStorage:', { 
-        notebooksCount: savedNotebooks ? JSON.parse(savedNotebooks).length : 0,
-        activeId: savedActiveId
-      });
+    const loadFromSupabase = async () => {
+      const loadFromLocalStorage = () => {
+        console.log('[NotebookContext] Loading from localStorage');
+        const key = `notebooks_${userId}`;
+        const activeKey = `activeNotebook_${userId}`;
 
-      if (savedNotebooks) {
-        const parsedNotebooks = JSON.parse(savedNotebooks);
-        console.log('[NotebookContext] Loaded notebooks:', parsedNotebooks);
-        setNotebooks(parsedNotebooks);
-        
-        // Set active notebook if previously saved and still exists
-        if (savedActiveId && parsedNotebooks.find(nb => nb.id === savedActiveId)) {
-          console.log('[NotebookContext] Setting active notebook:', savedActiveId);
-          setActiveNotebookId(savedActiveId);
-        } else {
-          console.log('[NotebookContext] No valid active notebook to restore');
+        try {
+          const savedNotebooks = localStorage.getItem(key);
+          const savedActiveId = localStorage.getItem(activeKey);
+
+          if (savedNotebooks) {
+            const parsedNotebooks = JSON.parse(savedNotebooks);
+            console.log('[NotebookContext] Loaded notebooks from localStorage:', parsedNotebooks);
+            setNotebooks(parsedNotebooks);
+
+            if (savedActiveId && parsedNotebooks.find(nb => nb.id === savedActiveId)) {
+              setActiveNotebookId(savedActiveId);
+            } else {
+              setActiveNotebookId(null);
+            }
+          } else {
+            setNotebooks([]);
+            setActiveNotebookId(null);
+          }
+        } catch (error) {
+          console.error('[NotebookContext] Error parsing notebooks from localStorage:', error);
+          setNotebooks([]);
           setActiveNotebookId(null);
         }
-      } else {
-        // No saved notebooks for this user - this is normal on first login
-        console.log('[NotebookContext] No saved notebooks for this user (first login?)');
-        setNotebooks([]);
-        setActiveNotebookId(null);
+      };
+
+      try {
+        let loaded = false;
+
+        if (supabase?.from) {
+          const { data, error } = await supabase
+            .from('notebooks')
+            .select('*')
+            .eq('user_id', userId)
+            .order('updated_at', { ascending: false });
+
+          if (error) {
+            console.warn('[NotebookContext] Error loading from Supabase, falling back to localStorage:', error);
+          } else if (Array.isArray(data) && data.length > 0) {
+            loaded = true;
+            console.log('[NotebookContext] Loaded notebooks from Supabase:', data);
+
+            const parsedNotebooks = data.map(nb => ({
+              ...nb,
+              sources: typeof nb.sources === 'string' ? JSON.parse(nb.sources || '[]') : (nb.sources || []),
+              chatHistory: typeof nb.chat_history === 'string' ? JSON.parse(nb.chat_history || '[]') : (nb.chat_history || []),
+              summaryData: nb.summary_data || '',
+              quizData: typeof nb.quiz_data === 'string' ? JSON.parse(nb.quiz_data || '[]') : (nb.quiz_data || []),
+              flashcardsData: typeof nb.flashcards_data === 'string' ? JSON.parse(nb.flashcards_data || '[]') : (nb.flashcards_data || []),
+              createdAt: nb.createdAt || nb.created_at,
+              updatedAt: nb.updatedAt || nb.updated_at,
+            }));
+
+            setNotebooks(parsedNotebooks);
+
+            const activeKey = `activeNotebook_${userId}`;
+            const savedActiveId = localStorage.getItem(activeKey);
+            if (savedActiveId && parsedNotebooks.find(nb => nb.id === savedActiveId)) {
+              setActiveNotebookId(savedActiveId);
+            } else {
+              setActiveNotebookId(null);
+            }
+          }
+        }
+
+        if (!loaded) {
+          console.log('[NotebookContext] Supabase unavailable/empty/error, using localStorage');
+          loadFromLocalStorage();
+        }
+      } catch (error) {
+        console.error('[NotebookContext] Error loading notebooks (unexpected), falling back to localStorage:', error);
+        loadFromLocalStorage();
+      } finally {
+        setIsLoading(false);
+        setIsLoadingData(false);
+        setShouldSkipSave(false);
+        console.log('[NotebookContext] Data load complete, saves enabled');
+        setHasLoadedForUser(userId);
       }
-    } catch (error) {
-      console.error('[NotebookContext] Error loading notebooks from localStorage:', error);
-      setNotebooks([]);
-      setActiveNotebookId(null);
-    } finally {
-      setIsLoading(false);
-      setIsLoadingData(false);
-      setShouldSkipSave(false); // Now allow saves
-      console.log('[NotebookContext] Data load complete, saves enabled');
-      setHasLoadedForUser(userId);
-    }
+    };
+
+    loadFromSupabase();
   }, [userId]);
 
-  // Save notebooks to localStorage whenever they change
+  // Save notebooks to Supabase and localStorage whenever they change
   useEffect(() => {
     if (!userId || shouldSkipSave) {
       console.log('[NotebookContext] Skipping save:', { userId, shouldSkipSave });
       return;
     }
 
+    const saveToSupabase = async () => {
+      try {
+        // Save each notebook to Supabase
+        for (const notebook of notebooks) {
+          const { data, error } = await supabase
+            .from('notebooks')
+            .upsert({
+              id: notebook.id,
+              user_id: userId,
+              title: notebook.title,
+              description: notebook.description,
+              sources: JSON.stringify(notebook.sources || []),
+              notes: notebook.notes,
+              chat_history: JSON.stringify(notebook.chatHistory || []),
+              summary_data: notebook.summaryData || '',
+              quiz_data: JSON.stringify(notebook.quizData || []),
+              flashcards_data: JSON.stringify(notebook.flashcardsData || []),
+              created_at: notebook.createdAt,
+              updated_at: notebook.updatedAt,
+            });
+          
+          if (error) {
+            console.warn('[NotebookContext] Error saving notebook to Supabase:', error);
+          } else {
+            console.log('[NotebookContext] Notebook saved to Supabase:', notebook.id);
+          }
+        }
+      } catch (error) {
+        console.error('[NotebookContext] Error saving to Supabase:', error);
+      }
+    };
+
+    // Save to Supabase if available
+    if (supabase.from) {
+      saveToSupabase();
+    }
+
+    // Also save to localStorage as fallback
     try {
       const key = `notebooks_${userId}`;
       console.log('[NotebookContext] Saving notebooks to localStorage:', {
@@ -137,6 +223,9 @@ export function NotebookProvider({ children, userId }) {
       sources: [],
       notes: '',
       chatHistory: [],
+      summaryData: '',
+      quizData: [],
+      flashcardsData: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -147,7 +236,12 @@ export function NotebookProvider({ children, userId }) {
       return [newNotebook, ...prev];
     });
     setActiveNotebookId(newNotebook.id);
+    setLastCreatedNotebookId(newNotebook.id);
     return newNotebook;
+  }, []);
+
+  const clearLastCreatedNotebookId = useCallback(() => {
+    setLastCreatedNotebookId(null);
   }, []);
 
   /**
@@ -253,6 +347,45 @@ export function NotebookProvider({ children, userId }) {
   }, []);
 
   /**
+   * Update summary data for a notebook
+   */
+  const updateSummaryData = useCallback((notebookId, summaryData) => {
+    setNotebooks(prev =>
+      prev.map(nb =>
+        nb.id === notebookId
+          ? { ...nb, summaryData, updatedAt: new Date().toISOString() }
+          : nb
+      )
+    );
+  }, []);
+
+  /**
+   * Update quiz data for a notebook
+   */
+  const updateQuizData = useCallback((notebookId, quizData) => {
+    setNotebooks(prev =>
+      prev.map(nb =>
+        nb.id === notebookId
+          ? { ...nb, quizData, updatedAt: new Date().toISOString() }
+          : nb
+      )
+    );
+  }, []);
+
+  /**
+   * Update flashcards data for a notebook
+   */
+  const updateFlashcardsData = useCallback((notebookId, flashcardsData) => {
+    setNotebooks(prev =>
+      prev.map(nb =>
+        nb.id === notebookId
+          ? { ...nb, flashcardsData, updatedAt: new Date().toISOString() }
+          : nb
+      )
+    );
+  }, []);
+
+  /**
    * Get current active notebook
    */
   const getActiveNotebook = useCallback(() => {
@@ -265,6 +398,7 @@ export function NotebookProvider({ children, userId }) {
     activeNotebookId,
     isLoading,
     activeNotebook: getActiveNotebook(),
+    lastCreatedNotebookId,
 
     // Actions
     createNotebook,
@@ -275,8 +409,12 @@ export function NotebookProvider({ children, userId }) {
     updateNotes,
     addChatMessage,
     clearChatHistory,
+    updateSummaryData,
+    updateQuizData,
+    updateFlashcardsData,
     setActiveNotebookId,
-    getActiveNotebook
+    getActiveNotebook,
+    clearLastCreatedNotebookId
   };
 
   return (

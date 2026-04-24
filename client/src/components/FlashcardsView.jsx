@@ -45,7 +45,7 @@ export function FlashcardsView({ data, loading, error, onRetry, hasRun }) {
   const progress = `${currentIndex + 1} / ${data.length}`;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-800/50 p-6 h-full min-h-0 overflow-y-auto">
+    <div className="rounded-xl border border-white/10 bg-gray-800/50 p-6 h-full min-h-0 flex flex-col overflow-hidden">
       <div className="mb-6 flex items-center justify-between">
         <span className="text-sm font-medium text-gray-400">{progress}</span>
         <div className="h-2 flex-1 mx-3 bg-gray-700 rounded-full overflow-hidden">
@@ -56,25 +56,29 @@ export function FlashcardsView({ data, loading, error, onRetry, hasRun }) {
         </div>
       </div>
 
-      <div
-        onClick={() => setIsFlipped(!isFlipped)}
-        className="h-64 cursor-pointer relative mb-6"
-      >
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
         <div
-          className={`w-full h-full rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${
-            isFlipped
-              ? 'bg-blue-600/15 border-blue-500/50 shadow-lg shadow-blue-600/20'
-              : 'bg-gray-800/50 border-white/10 hover:border-white/20'
-          }`}
+          onClick={() => setIsFlipped(!isFlipped)}
+          className="h-64 cursor-pointer relative mb-6"
         >
-          <div className="text-center p-6">
-            <p className="text-xs text-gray-400 mb-3 uppercase tracking-widest font-bold">
-              {isFlipped ? t('answer') : t('question')}
-            </p>
-            <p className="text-xl font-semibold text-white leading-relaxed">
-              {isFlipped ? current.back : current.front}
-            </p>
-            <p className="text-xs text-gray-500 mt-4">{t('clickToFlip')}</p>
+          <div
+            className={`w-full h-full rounded-xl border-2 transition-all duration-300 overflow-hidden ${
+              isFlipped
+                ? 'bg-blue-600/15 border-blue-500/50 shadow-lg shadow-blue-600/20'
+                : 'bg-gray-800/50 border-white/10 hover:border-white/20'
+            }`}
+          >
+            <div className="h-full text-center p-6 flex flex-col">
+              <p className="text-xs text-gray-400 mb-3 uppercase tracking-widest font-bold shrink-0">
+                {isFlipped ? t('answer') : t('question')}
+              </p>
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <p className="text-xl font-semibold text-white leading-relaxed whitespace-pre-wrap break-words">
+                  {isFlipped ? current.back : current.front}
+                </p>
+              </div>
+              <p className="text-xs text-gray-500 mt-4 shrink-0">{t('clickToFlip')}</p>
+            </div>
           </div>
         </div>
       </div>

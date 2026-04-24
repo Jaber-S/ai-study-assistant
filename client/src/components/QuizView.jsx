@@ -55,7 +55,7 @@ export function QuizView({ data, loading, error, onRetry, hasRun }) {
 
   if (completed) {
     return (
-      <div className="rounded-xl border border-white/10 bg-gray-800/50 p-6 space-y-6">
+      <div className="rounded-xl border border-white/10 bg-gray-800/50 p-6 h-full min-h-0 flex flex-col gap-6 overflow-hidden">
         <div>
           <h2 className="text-xl font-semibold text-white mb-2">{t('quizComplete')}</h2>
           <p className="text-gray-400">{t('yourScore')}</p>
@@ -63,7 +63,7 @@ export function QuizView({ data, loading, error, onRetry, hasRun }) {
           <p className="text-gray-400">{t('percentageCorrect')} {Math.round((correctCount / total) * 100)}%</p>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-gray-900/50 p-4 space-y-3 max-h-96 overflow-y-auto">
+        <div className="rounded-xl border border-white/10 bg-gray-900/50 p-4 space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
           {data.map((item, idx) => {
             const selected = selectedAnswers[idx];
             const isCorrect = selected === item.answer;
@@ -102,7 +102,7 @@ export function QuizView({ data, loading, error, onRetry, hasRun }) {
   const isCorrect = answered && selected === current.answer;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-800/50 p-6 h-full min-h-0 overflow-y-auto">
+    <div className="rounded-xl border border-white/10 bg-gray-800/50 p-6 h-full min-h-0 flex flex-col overflow-hidden">
       <div className="mb-4 flex items-center justify-between">
         <span className="text-sm font-medium text-gray-400">{progress}</span>
         <div className="h-2 flex-1 mx-3 bg-gray-700 rounded-full overflow-hidden">
@@ -113,7 +113,7 @@ export function QuizView({ data, loading, error, onRetry, hasRun }) {
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 flex-1 min-h-0 overflow-y-auto pr-1">
         <h3 className="text-lg font-semibold text-white mb-4">{current.question}</h3>
 
         <div className="space-y-3">
