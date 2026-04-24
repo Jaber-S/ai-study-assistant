@@ -99,6 +99,14 @@ function formatOpenRouterError(data, httpStatus) {
   const code = typeof e === "object" && e?.code != null ? Number(e.code) : httpStatus;
   let msg = bits.length ? `${base} — ${bits.join("; ")}` : base;
 
+  if (code === 401 || httpStatus === 401) {
+    msg +=
+      " (Unauthorized: check OPENROUTER_API_KEY in your deployment environment; an invalid key often returns 'User not found'.)";
+  } else if (code === 403 || httpStatus === 403) {
+    msg +=
+      " (Forbidden: your OPENROUTER_API_KEY may lack access to this model or requests may be blocked by policy.)";
+  }
+
   const limited =
     code === 429 ||
     httpStatus === 429 ||
