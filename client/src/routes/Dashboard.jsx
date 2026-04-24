@@ -74,6 +74,7 @@ export default function Dashboard({ user }) {
   const [error, setError] = useState('');
   const [sourceError, setSourceError] = useState('');
   const [summaryData, setSummaryData] = useState(() => loadFromStorage('summaryData', ''));
+  const [animateSummary, setAnimateSummary] = useState(false);
   const [quizData, setQuizData] = useState(() => loadFromStorage('quizData', []));
   const [flashcardsData, setFlashcardsData] = useState(() => loadFromStorage('flashcardsData', []));
   const [chatMessages, setChatMessages] = useState(() => loadFromStorage('chatMessages', []));
@@ -91,12 +92,19 @@ export default function Dashboard({ user }) {
       setUploads(activeNotebook.sources || []);
       setText('');
       setSummaryData('');
+      setAnimateSummary(false);
       setQuizData([]);
       setFlashcardsData([]);
       setChatMessages(activeNotebook.chatHistory || []);
       setHasRun((activeNotebook.chatHistory?.length || 0) > 0);
     }
   }, [activeNotebook?.id]);
+
+  useEffect(() => {
+    if (mode !== 'summary' && summaryData) {
+      setAnimateSummary(false);
+    }
+  }, [mode, summaryData]);
 
   const displayName = user?.user_metadata?.full_name || user?.email || 'Estudiante';
 
@@ -128,6 +136,7 @@ export default function Dashboard({ user }) {
 
     if (confirmed) {
       setSummaryData('');
+      setAnimateSummary(false);
       setQuizData([]);
       setFlashcardsData([]);
       setChatMessages([]);
@@ -200,6 +209,7 @@ export default function Dashboard({ user }) {
       const out = await requestAi({ text: combinedText.trim(), mode, question: mode === 'chat' ? question.trim() : undefined });
 
       if (mode === 'summary') {
+        setAnimateSummary(true);
         setSummaryData(out);
       } else if (mode === 'quiz') {
         setQuizData(out);
@@ -259,7 +269,17 @@ export default function Dashboard({ user }) {
               <ModeSelector value={mode} onChange={setMode} disabled={busy} />
               <div className="mt-6 flex-1 min-h-0 flex flex-col">
                 <div className="flex-1 min-h-0 overflow-hidden">
-                  {mode === 'summary' && <SummaryView data={summaryData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
+                  {mode === 'summary' && (
+                    <SummaryView
+                      data={summaryData}
+                      loading={loading}
+                      error={error}
+                      onRetry={retry}
+                      hasRun={hasRun}
+                      animateOnMount={animateSummary}
+                      onAnimationComplete={() => setAnimateSummary(false)}
+                    />
+                  )}
                   {mode === 'quiz' && <QuizView data={quizData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
                   {mode === 'flashcards' && <FlashcardsView data={flashcardsData} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}
                   {mode === 'chat' && <ChatView messages={chatMessages} loading={loading} error={error} onRetry={retry} hasRun={hasRun} />}

@@ -17,14 +17,19 @@ function stripMarkdown(text) {
     .trim();
 }
 
-export function SummaryView({ data, loading, error, onRetry, hasRun }) {
+export function SummaryView({ data, loading, error, onRetry, hasRun, animateOnMount = false, onAnimationComplete }) {
   const { t } = useTranslation();
-  const [displayedData, setDisplayedData] = useState('');
+  const [displayedData, setDisplayedData] = useState(() => (animateOnMount ? '' : (data || '')));
 
   // Stream text effect
   useEffect(() => {
     if (!data) {
       setDisplayedData('');
+      return;
+    }
+
+    if (!animateOnMount) {
+      setDisplayedData(data);
       return;
     }
 
@@ -40,13 +45,14 @@ export function SummaryView({ data, loading, error, onRetry, hasRun }) {
       if (currentIndex >= fullData.length) {
         currentIndex = fullData.length;
         clearInterval(interval);
+        onAnimationComplete?.();
       }
 
       setDisplayedData(fullData.substring(0, currentIndex));
     }, 50); // Update every 50ms (slower than before for better readability)
 
     return () => clearInterval(interval);
-  }, [data]);
+  }, [data, animateOnMount, onAnimationComplete]);
 
   const handleCopy = async () => {
     const plainText = stripMarkdown(data);
