@@ -1,6 +1,9 @@
 {
   "name": "ai-study-assistant",
   "private": true,
+  "engines": {
+    "node": ">=20 <25"
+  },
   "scripts": {
     "install:all": "npm install --prefix server && npm install --prefix client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
